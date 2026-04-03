@@ -111,53 +111,71 @@ function assertSupportedActiveTab(activeTab) {
 
 async function ensureRequiredPermissions() {
   const requiredPermissions = {
-    origins: ["https://ans.app/*", "<all_urls>"],
+    origins: ["https://ans.app/*"],
   };
   const granted = await browser.permissions.request(requiredPermissions);
 
   if (!granted) {
     throw new Error(
-      "Required permissions were not granted. Allow access to ans.app and all sites.",
+      "Required permissions were not granted. Allow access to ans.app for extension",
     );
   }
 }
 
-async function processHref(tabId, windowId, href, pdfDocument) {
-  const renderDelayMs = 1000;
-  const createdTab = await browser.tabs.create({
+async function openAndWaitForAuth(windowId, href) {
+  const tab = await browser.tabs.create({
     url: href,
-    active: true,
+    active: false,
     windowId,
   });
 
-  if (!createdTab?.id) {
-    throw new Error(`Failed to open a tab for ${href}`);
+  if (!tab?.id) {
+    throw new Error(`Failed to open tab for ${href}`);
   }
 
-  try {
-    await waitForTabComplete(createdTab.id);
-    await delay(renderDelayMs);
+  await waitForTabComplete(tab.id);
+  return tab;
+}
 
-    const loadedTab = await browser.tabs.get(createdTab.id);
-    const viewUrl = normalizeViewUrl(loadedTab.url ?? href);
+async function redirectToViewUrl(tab) {
+  const loadedTab = await browser.tabs.get(tab.id);
+  const viewUrl = normalizeViewUrl(loadedTab.url ?? "");
 
-    if (viewUrl && viewUrl !== loadedTab.url) {
-      await browser.tabs.update(createdTab.id, { url: viewUrl });
-      await waitForTabComplete(createdTab.id);
-      await delay(renderDelayMs);
-    }
+  if (viewUrl && viewUrl !== loadedTab.url) {
+    await browser.tabs.update(tab.id, { url: viewUrl });
+    await waitForTabComplete(tab.id);
+  }
 
-    const screenshotDataUrl = await browser.tabs.captureVisibleTab(windowId, {
-      format: "png",
+  return tab.id;
+}
+
+async function processBatch(hrefs, windowId, pdfDocument, renderDelayMs) {
+  const tabs = await Promise.all(
+    hrefs.map((href) => openAndWaitForAuth(windowId, href)),
+  );
+
+  const tabIds = await Promise.all(
+    tabs.map((tab) => redirectToViewUrl(tab)),
+  );
+
+  await delay(renderDelayMs);
+
+  for (const tabId of tabIds) {
+    const screenshotDataUrl = await browser.tabs.captureTab(tabId, {
+      format: "jpeg",
+      quality: 85,
     });
-
     appendScreenshotToPdf(pdfDocument, screenshotDataUrl);
-  } finally {
-    await browser.tabs.remove(createdTab.id);
   }
+
+  await Promise.all(
+    tabIds.map((id) => browser.tabs.remove(id).catch(() => {})),
+  );
 }
 
 async function runScrape(statusElement, downloadElement, scrapeButton) {
+  const batchSize = 4;
+  const renderDelayMs = 7000;
   const activeTab = await getActiveTab();
   assertSupportedActiveTab(activeTab);
 
@@ -177,10 +195,24 @@ async function runScrape(statusElement, downloadElement, scrapeButton) {
   });
   pdfDocument.__ansIsEmpty = true;
 
-  for (let index = 0; index < hrefs.length; index += 1) {
-    setStatus(statusElement, `Processing ${index + 1} of ${hrefs.length}`);
-    await processHref(activeTab.id, activeTab.windowId, hrefs[index], pdfDocument);
-    await delay(2000);
+  const totalBatches = Math.ceil(hrefs.length / batchSize);
+
+  for (let batchIndex = 0; batchIndex < totalBatches; batchIndex += 1) {
+    const start = batchIndex * batchSize;
+    const batch = hrefs.slice(start, start + batchSize);
+    const batchNum = batchIndex + 1;
+
+    setStatus(
+      statusElement,
+      `Batch ${batchNum}/${totalBatches}: loading ${batch.length} pages...`,
+    );
+
+    await processBatch(batch, activeTab.windowId, pdfDocument, renderDelayMs);
+
+    setStatus(
+      statusElement,
+      `Captured ${Math.min(start + batch.length, hrefs.length)} of ${hrefs.length} pages`,
+    );
   }
 
   const pdfBlob = pdfDocument.output("blob");
@@ -209,9 +241,9 @@ document.addEventListener("DOMContentLoaded", () => {
     setStatus(statusElement, "Starting scrape...");
 
     try {
+      await ensureRequiredPermissions();
       const activeTab = await getActiveTab();
       assertSupportedActiveTab(activeTab);
-      await ensureRequiredPermissions();
       await runScrape(statusElement, downloadElement, scrapeButton);
     } catch (error) {
       console.error(error);
