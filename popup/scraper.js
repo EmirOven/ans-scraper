@@ -178,10 +178,7 @@ async function runScrape(statusElement, downloadElement, scrapeButton) {
   pdfDocument.__ansIsEmpty = true;
 
   for (let index = 0; index < hrefs.length; index += 1) {
-    setStatus(
-      statusElement,
-      `Processing ${index + 1} of ${hrefs.length}`,
-    );
+    setStatus(statusElement, `Processing ${index + 1} of ${hrefs.length}`);
     await processHref(activeTab.id, activeTab.windowId, hrefs[index], pdfDocument);
     await delay(2000);
   }

@@ -1,0 +1,4 @@
+#downloadButton,
+#printButton {
+  display: flex !important;
+}
