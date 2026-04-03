@@ -1,0 +1,6 @@
+{
+  "description": "An extension to scrape the questions along with their respective answers on Ans to a PDF",
+  "manifest_version": 3,
+  "name": "Ans Scraper",
+  "version": "1.0"
+}
