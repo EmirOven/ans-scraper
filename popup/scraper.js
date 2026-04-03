@@ -8,6 +8,12 @@ function setDownloadState(downloadElement, enabled) {
   downloadElement.setAttribute("aria-disabled", String(!enabled));
 }
 
+function resetDownloadLink(downloadElement) {
+  downloadElement.removeAttribute("href");
+  setDownloadState(downloadElement, false);
+  downloadElement.textContent = "PDF not ready";
+}
+
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -76,6 +82,33 @@ function buildPdfFilename() {
   return `ans-capture-${timestamp}.pdf`;
 }
 
+function isAnsUrl(href) {
+  try {
+    return new URL(href).hostname === "ans.app";
+  } catch {
+    return false;
+  }
+}
+
+async function getActiveTab() {
+  const [activeTab] = await browser.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+
+  return activeTab;
+}
+
+function assertSupportedActiveTab(activeTab) {
+  if (!activeTab?.id || typeof activeTab.windowId !== "number") {
+    throw new Error("No active tab available.");
+  }
+
+  if (!isAnsUrl(activeTab.url)) {
+    throw new Error("This extension only works on ans.app.");
+  }
+}
+
 async function ensureRequiredPermissions() {
   const requiredPermissions = {
     origins: ["https://ans.app/*", "<all_urls>"],
@@ -125,14 +158,8 @@ async function processHref(tabId, windowId, href, pdfDocument) {
 }
 
 async function runScrape(statusElement, downloadElement, scrapeButton) {
-  const [activeTab] = await browser.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-
-  if (!activeTab?.id || typeof activeTab.windowId !== "number") {
-    throw new Error("No active tab available.");
-  }
+  const activeTab = await getActiveTab();
+  assertSupportedActiveTab(activeTab);
 
   const { error, hrefs } = await getNavLinkHrefs(activeTab.id);
 
@@ -176,20 +203,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusElement = document.getElementById("status");
   const downloadElement = document.getElementById("download");
 
-  downloadElement.removeAttribute("href");
-  setDownloadState(downloadElement, false);
-  downloadElement.textContent = "PDF not ready";
-  setStatus(statusElement, "Ready to scrape current tab");
+  resetDownloadLink(downloadElement);
 
   const startRunnerJob = async () => {
     scrapeButton.textContent = "Running...";
     scrapeButton.disabled = true;
-    setDownloadState(downloadElement, false);
-    downloadElement.removeAttribute("href");
-    downloadElement.textContent = "PDF not ready";
+    resetDownloadLink(downloadElement);
     setStatus(statusElement, "Starting scrape...");
 
     try {
+      const activeTab = await getActiveTab();
+      assertSupportedActiveTab(activeTab);
       await ensureRequiredPermissions();
       await runScrape(statusElement, downloadElement, scrapeButton);
     } catch (error) {
@@ -201,4 +225,18 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   scrapeButton.addEventListener("click", startRunnerJob);
+
+  void (async () => {
+    try {
+      const activeTab = await getActiveTab();
+      assertSupportedActiveTab(activeTab);
+      scrapeButton.disabled = false;
+      scrapeButton.textContent = "Scrape it!";
+      setStatus(statusElement, "Ready to scrape current tab");
+    } catch (error) {
+      scrapeButton.disabled = true;
+      scrapeButton.textContent = "Unavailable";
+      setStatus(statusElement, error.message, true);
+    }
+  })();
 });

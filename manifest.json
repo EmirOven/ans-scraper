@@ -13,6 +13,12 @@
       "run_at": "document_idle"
     }
   ],
+
+  "icons": {
+    "48": "icon/icon-48.png",
+    "96": "icon/icon-96.png"
+  },
+
   "browser_specific_settings": {
     "gecko": {
       "id": "ansscraper@emiroven",

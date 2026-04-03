@@ -19,6 +19,10 @@ body {
   margin: 0;
 }
 
+.status.is-error {
+  color: #b00020;
+}
+
 #download.is-disabled {
   color: gray;
   cursor: not-allowed;
