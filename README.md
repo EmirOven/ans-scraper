@@ -1,0 +1,10 @@
+# Ans Scraper
+
+This is a simple extension to scrape the answer/result page of tests on [Ans](https://ans.app/).
+
+## Changelog
+
+**1.0**: Initial working release
+**1.1**: Icons added
+**1.2**: Preparing for Mozilla packaging
+**1.2.1**: Small bugfix, switched to non-minified jsPDF
