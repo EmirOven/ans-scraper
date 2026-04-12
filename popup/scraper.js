@@ -117,23 +117,6 @@ async function ensureCapturePermission() {
   if (typeof browser.tabs.captureVisibleTab !== "function") {
     throw new Error("This browser does not expose a supported tab capture API.");
   }
-
-  if (!browser.permissions?.contains || !browser.permissions?.request) {
-    throw new Error("This browser cannot request the capture permission needed for screenshots.");
-  }
-
-  const capturePermission = { origins: ["<all_urls>"] };
-  const hasCapturePermission = await browser.permissions.contains(capturePermission);
-
-  if (hasCapturePermission) {
-    return;
-  }
-
-  const granted = await browser.permissions.request(capturePermission);
-
-  if (!granted) {
-    throw new Error("The all-websites permission is required to capture the temporary tabs.");
-  }
 }
 
 async function openAndWaitForAuth(windowId, href) {
