@@ -89,3 +89,9 @@ You can still help by [reporting bugs or suggesting features](https://github.com
 ## License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
+
+
+## Donate
+
+If you like our software, you can donate! Donations are the easiest method of helping us out. You can find out the links to donate on the right side of the GitHub repository (on the desktop page).
+
