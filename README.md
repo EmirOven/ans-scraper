@@ -1,5 +1,7 @@
 # Ans Scraper
 
+[<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" width="200" alt="Get extension from Firefox Addons!" />](https://addons.mozilla.org/en-US/firefox/addon/ans-scraper/)
+
 Sick of screenshotting every single question, rubric, and answer on your Ans results page? This browser extension does it for you with one click and every page is captured and turned into a downloadable PDF. Share it with friends, feed it to an AI, or just keep it for your own review.
 
 It also restores the download button on Ans's embedded PDF viewer so you can grab the exam paper itself.
@@ -15,11 +17,11 @@ It also restores the download button on Ans's embedded PDF viewer so you can gra
 
 ### Firefox
 
-Install from [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/ans-scraper/).
+[<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" width="200" alt="Get extension from Firefox Addons!" />](https://addons.mozilla.org/en-US/firefox/addon/ans-scraper/)
 
 ### Chrome
 
-Not yet published on the Chrome Web Store. To install manually:
+Not yet published on the Chrome Web Store, as we are waiting for approval from Google. To install manually for now:
 
 1. Download or clone this repository
 2. Open `chrome://extensions`
