@@ -12,4 +12,6 @@ This is a simple extension to scrape the answer/result page of tests on [Ans](ht
 **1.3.1**: Fixed Firefox screenshot capture permission handling and added a compatible capture fallback \
 **1.3.2**: Request broad capture access at runtime so Firefox can screenshot the temporary scrape tabs \
 **1.3.3**: Made broad website access required so Firefox capture works without a runtime permission prompt \
-**1.3.4**: Solved permission issues with the add-on store version of the extension
+**1.3.4**: Solved permission issues with the add-on store version of the extension \
+**1.3.5**: Moved Chrome scraping into a dedicated runner tab so the UI stays open while tabs are being captured \
+**1.3.6**: Switched toolbar clicks to a background-launched runner tab so Firefox and Chrome use the same flow

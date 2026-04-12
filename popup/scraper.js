@@ -1,3 +1,5 @@
+const browserApi = globalThis.browser ?? globalThis.chrome;
+
 function setStatus(statusElement, message, isError = false) {
   statusElement.textContent = message;
   statusElement.classList.toggle("is-error", isError);
@@ -29,7 +31,7 @@ function normalizeViewUrl(href) {
 }
 
 async function waitForTabComplete(tabId) {
-  const tab = await browser.tabs.get(tabId);
+  const tab = await browserApi.tabs.get(tabId);
 
   if (tab.status === "complete") {
     return;
@@ -38,17 +40,17 @@ async function waitForTabComplete(tabId) {
   await new Promise((resolve) => {
     const handleUpdated = (updatedTabId, changeInfo) => {
       if (updatedTabId === tabId && changeInfo.status === "complete") {
-        browser.tabs.onUpdated.removeListener(handleUpdated);
+        browserApi.tabs.onUpdated.removeListener(handleUpdated);
         resolve();
       }
     };
 
-    browser.tabs.onUpdated.addListener(handleUpdated);
+    browserApi.tabs.onUpdated.addListener(handleUpdated);
   });
 }
 
 async function getNavLinkHrefs(tabId) {
-  const response = await browser.tabs.sendMessage(tabId, {
+  const response = await browserApi.tabs.sendMessage(tabId, {
     type: "collectNavLinkHrefs",
   });
 
@@ -91,12 +93,42 @@ function isAnsUrl(href) {
 }
 
 async function getActiveTab() {
-  const [activeTab] = await browser.tabs.query({
+  const [activeTab] = await browserApi.tabs.query({
     active: true,
     currentWindow: true,
   });
 
   return activeTab;
+}
+
+function getSourceTabId() {
+  const sourceTabId = Number(new URLSearchParams(window.location.search).get("sourceTabId"));
+
+  if (!Number.isInteger(sourceTabId) || sourceTabId <= 0) {
+    return null;
+  }
+
+  return sourceTabId;
+}
+
+function getLaunchError() {
+  return new URLSearchParams(window.location.search).get("error");
+}
+
+async function getTargetTab() {
+  const sourceTabId = getSourceTabId();
+
+  if (sourceTabId !== null) {
+    try {
+      return await browserApi.tabs.get(sourceTabId);
+    } catch {
+      throw new Error(
+        "The original Ans tab is no longer available. Reopen the extension from ans.app.",
+      );
+    }
+  }
+
+  return getActiveTab();
 }
 
 function assertSupportedActiveTab(activeTab) {
@@ -110,8 +142,8 @@ function assertSupportedActiveTab(activeTab) {
 }
 
 async function ensureCapturePermission() {
-  if (typeof browser.tabs.captureVisibleTab !== "function") {
-    if (typeof browser.tabs.captureTab === "function") {
+  if (typeof browserApi.tabs.captureVisibleTab !== "function") {
+    if (typeof browserApi.tabs.captureTab === "function") {
       return;
     }
 
@@ -120,7 +152,7 @@ async function ensureCapturePermission() {
 }
 
 async function openAndWaitForAuth(windowId, href) {
-  const tab = await browser.tabs.create({
+  const tab = await browserApi.tabs.create({
     url: href,
     active: false,
     windowId,
@@ -135,11 +167,11 @@ async function openAndWaitForAuth(windowId, href) {
 }
 
 async function redirectToViewUrl(tab) {
-  const loadedTab = await browser.tabs.get(tab.id);
+  const loadedTab = await browserApi.tabs.get(tab.id);
   const viewUrl = normalizeViewUrl(loadedTab.url ?? "");
 
   if (viewUrl && viewUrl !== loadedTab.url) {
-    await browser.tabs.update(tab.id, { url: viewUrl });
+    await browserApi.tabs.update(tab.id, { url: viewUrl });
     await waitForTabComplete(tab.id);
   }
 
@@ -152,14 +184,14 @@ async function captureLoadedTab(tabId, windowId) {
     quality: 85,
   };
 
-  if (typeof browser.tabs.captureVisibleTab === "function") {
-    await browser.tabs.update(tabId, { active: true });
-    await delay(300);
-    return browser.tabs.captureVisibleTab(windowId, options);
+  if (typeof browserApi.tabs.captureVisibleTab === "function") {
+    await browserApi.tabs.update(tabId, { active: true });
+    await delay(500);
+    return browserApi.tabs.captureVisibleTab(windowId, options);
   }
 
-  if (typeof browser.tabs.captureTab === "function") {
-    return browser.tabs.captureTab(tabId, options);
+  if (typeof browserApi.tabs.captureTab === "function") {
+    return browserApi.tabs.captureTab(tabId, options);
   }
 
   throw new Error(
@@ -168,19 +200,15 @@ async function captureLoadedTab(tabId, windowId) {
 }
 
 async function processBatch(hrefs, windowId, pdfDocument, renderDelayMs) {
-  const [previousActiveTab] = await browser.tabs.query({
+  const [previousActiveTab] = await browserApi.tabs.query({
     active: true,
     windowId,
   });
-  const tabs = await Promise.all(
-    hrefs.map((href) => openAndWaitForAuth(windowId, href)),
-  );
+  const tabs = await Promise.all(hrefs.map((href) => openAndWaitForAuth(windowId, href)));
   const createdTabIds = tabs.map((tab) => tab.id).filter(Boolean);
 
   try {
-    const tabIds = await Promise.all(
-      tabs.map((tab) => redirectToViewUrl(tab)),
-    );
+    const tabIds = await Promise.all(tabs.map((tab) => redirectToViewUrl(tab)));
 
     await delay(renderDelayMs);
 
@@ -189,14 +217,10 @@ async function processBatch(hrefs, windowId, pdfDocument, renderDelayMs) {
       appendScreenshotToPdf(pdfDocument, screenshotDataUrl);
     }
   } finally {
-    await Promise.all(
-      createdTabIds.map((id) => browser.tabs.remove(id).catch(() => {})),
-    );
+    await Promise.all(createdTabIds.map((id) => browserApi.tabs.remove(id).catch(() => {})));
 
     if (previousActiveTab?.id) {
-      await browser.tabs
-        .update(previousActiveTab.id, { active: true })
-        .catch(() => {});
+      await browserApi.tabs.update(previousActiveTab.id, { active: true }).catch(() => {});
     }
   }
 }
@@ -204,10 +228,10 @@ async function processBatch(hrefs, windowId, pdfDocument, renderDelayMs) {
 async function runScrape(statusElement, downloadElement, scrapeButton) {
   const batchSize = 4;
   const renderDelayMs = 7000;
-  const activeTab = await getActiveTab();
-  assertSupportedActiveTab(activeTab);
+  const targetTab = await getTargetTab();
+  assertSupportedActiveTab(targetTab);
 
-  const { error, hrefs } = await getNavLinkHrefs(activeTab.id);
+  const { error, hrefs } = await getNavLinkHrefs(targetTab.id);
 
   if (error) {
     throw new Error(error);
@@ -230,12 +254,9 @@ async function runScrape(statusElement, downloadElement, scrapeButton) {
     const batch = hrefs.slice(start, start + batchSize);
     const batchNum = batchIndex + 1;
 
-    setStatus(
-      statusElement,
-      `Batch ${batchNum}/${totalBatches}: loading ${batch.length} pages...`,
-    );
+    setStatus(statusElement, `Batch ${batchNum}/${totalBatches}: loading ${batch.length} pages...`);
 
-    await processBatch(batch, activeTab.windowId, pdfDocument, renderDelayMs);
+    await processBatch(batch, targetTab.windowId, pdfDocument, renderDelayMs);
 
     setStatus(
       statusElement,
@@ -259,8 +280,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const scrapeButton = document.getElementById("scrape");
   const statusElement = document.getElementById("status");
   const downloadElement = document.getElementById("download");
+  const launchError = getLaunchError();
 
   resetDownloadLink(downloadElement);
+
+  if (launchError) {
+    scrapeButton.disabled = true;
+    scrapeButton.textContent = "Unavailable";
+    setStatus(statusElement, launchError, true);
+    return;
+  }
 
   const startRunnerJob = async () => {
     scrapeButton.textContent = "Running...";
@@ -270,8 +299,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await ensureCapturePermission();
-      const activeTab = await getActiveTab();
-      assertSupportedActiveTab(activeTab);
+      const targetTab = await getTargetTab();
+      assertSupportedActiveTab(targetTab);
       await runScrape(statusElement, downloadElement, scrapeButton);
     } catch (error) {
       console.error(error);
@@ -285,11 +314,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   void (async () => {
     try {
-      const activeTab = await getActiveTab();
-      assertSupportedActiveTab(activeTab);
+      const targetTab = await getTargetTab();
+      assertSupportedActiveTab(targetTab);
       scrapeButton.disabled = false;
       scrapeButton.textContent = "Scrape it!";
-      setStatus(statusElement, "Ready to scrape current tab");
+      setStatus(statusElement, "Ready to scrape the selected Ans tab");
     } catch (error) {
       scrapeButton.disabled = true;
       scrapeButton.textContent = "Unavailable";

@@ -1,0 +1,35 @@
+body {
+  width: 260px;
+  min-height: 160px;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f6f8;
+  color: #1f2937;
+}
+
+.launcher {
+  display: flex;
+  min-height: 160px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.status {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.status.is-error {
+  color: #b00020;
+}
+
+#open {
+  align-self: flex-start;
+}

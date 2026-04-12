@@ -1,3 +1,5 @@
+const browserApi = globalThis.browser ?? globalThis.chrome;
+
 function collectNavLinkHrefs() {
   const navElement = document.querySelector("div.split-screen nav");
 
@@ -24,7 +26,7 @@ function collectNavLinkHrefs() {
   };
 }
 
-browser.runtime.onMessage.addListener((message) => {
+browserApi.runtime.onMessage.addListener((message) => {
   if (message?.type === "collectNavLinkHrefs") {
     return Promise.resolve(collectNavLinkHrefs());
   }
