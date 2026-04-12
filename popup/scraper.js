@@ -109,16 +109,30 @@ function assertSupportedActiveTab(activeTab) {
   }
 }
 
-async function ensureRequiredPermissions() {
-  const requiredPermissions = {
-    origins: ["https://ans.app/*"],
-  };
-  const granted = await browser.permissions.request(requiredPermissions);
+async function ensureCapturePermission() {
+  if (typeof browser.tabs.captureTab === "function") {
+    return;
+  }
+
+  if (typeof browser.tabs.captureVisibleTab !== "function") {
+    throw new Error("This browser does not expose a supported tab capture API.");
+  }
+
+  if (!browser.permissions?.contains || !browser.permissions?.request) {
+    throw new Error("This browser cannot request the capture permission needed for screenshots.");
+  }
+
+  const capturePermission = { origins: ["<all_urls>"] };
+  const hasCapturePermission = await browser.permissions.contains(capturePermission);
+
+  if (hasCapturePermission) {
+    return;
+  }
+
+  const granted = await browser.permissions.request(capturePermission);
 
   if (!granted) {
-    throw new Error(
-      "Required permissions were not granted. Allow access to ans.app for extension",
-    );
+    throw new Error("The all-websites permission is required to capture the temporary tabs.");
   }
 }
 
@@ -149,28 +163,59 @@ async function redirectToViewUrl(tab) {
   return tab.id;
 }
 
+async function captureLoadedTab(tabId, windowId) {
+  const options = {
+    format: "jpeg",
+    quality: 85,
+  };
+
+  if (typeof browser.tabs.captureTab === "function") {
+    return browser.tabs.captureTab(tabId, options);
+  }
+
+  if (typeof browser.tabs.captureVisibleTab === "function") {
+    await browser.tabs.update(tabId, { active: true });
+    await delay(300);
+    return browser.tabs.captureVisibleTab(windowId, options);
+  }
+
+  throw new Error(
+    "Screenshot capture is unavailable. Reload the extension and allow the requested all-websites access.",
+  );
+}
+
 async function processBatch(hrefs, windowId, pdfDocument, renderDelayMs) {
+  const [previousActiveTab] = await browser.tabs.query({
+    active: true,
+    windowId,
+  });
   const tabs = await Promise.all(
     hrefs.map((href) => openAndWaitForAuth(windowId, href)),
   );
+  const createdTabIds = tabs.map((tab) => tab.id).filter(Boolean);
 
-  const tabIds = await Promise.all(
-    tabs.map((tab) => redirectToViewUrl(tab)),
-  );
+  try {
+    const tabIds = await Promise.all(
+      tabs.map((tab) => redirectToViewUrl(tab)),
+    );
 
-  await delay(renderDelayMs);
+    await delay(renderDelayMs);
 
-  for (const tabId of tabIds) {
-    const screenshotDataUrl = await browser.tabs.captureTab(tabId, {
-      format: "jpeg",
-      quality: 85,
-    });
-    appendScreenshotToPdf(pdfDocument, screenshotDataUrl);
+    for (const tabId of tabIds) {
+      const screenshotDataUrl = await captureLoadedTab(tabId, windowId);
+      appendScreenshotToPdf(pdfDocument, screenshotDataUrl);
+    }
+  } finally {
+    await Promise.all(
+      createdTabIds.map((id) => browser.tabs.remove(id).catch(() => {})),
+    );
+
+    if (previousActiveTab?.id) {
+      await browser.tabs
+        .update(previousActiveTab.id, { active: true })
+        .catch(() => {});
+    }
   }
-
-  await Promise.all(
-    tabIds.map((id) => browser.tabs.remove(id).catch(() => {})),
-  );
 }
 
 async function runScrape(statusElement, downloadElement, scrapeButton) {
@@ -178,6 +223,7 @@ async function runScrape(statusElement, downloadElement, scrapeButton) {
   const renderDelayMs = 7000;
   const activeTab = await getActiveTab();
   assertSupportedActiveTab(activeTab);
+  await ensureCapturePermission();
 
   const { error, hrefs } = await getNavLinkHrefs(activeTab.id);
 
@@ -241,7 +287,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setStatus(statusElement, "Starting scrape...");
 
     try {
-      await ensureRequiredPermissions();
       const activeTab = await getActiveTab();
       assertSupportedActiveTab(activeTab);
       await runScrape(statusElement, downloadElement, scrapeButton);

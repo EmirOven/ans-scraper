@@ -2,10 +2,10 @@
   "description": "An extension to scrape the questions along with their respective answers on Ans to a PDF",
   "manifest_version": 3,
   "name": "Ans Scraper",
-  "version": "1.3",
+  "version": "1.3.2",
   "permissions": ["activeTab", "tabs"],
   "host_permissions": ["https://ans.app/*"],
-  "optional_host_permissions": ["https://ans.app/*"],
+  "optional_host_permissions": ["<all_urls>"],
   "content_scripts": [
     {
       "matches": ["https://ans.app/*"],
