@@ -110,11 +110,11 @@ function assertSupportedActiveTab(activeTab) {
 }
 
 async function ensureCapturePermission() {
-  if (typeof browser.tabs.captureTab === "function") {
-    return;
-  }
-
   if (typeof browser.tabs.captureVisibleTab !== "function") {
+    if (typeof browser.tabs.captureTab === "function") {
+      return;
+    }
+
     throw new Error("This browser does not expose a supported tab capture API.");
   }
 }
@@ -152,14 +152,14 @@ async function captureLoadedTab(tabId, windowId) {
     quality: 85,
   };
 
-  if (typeof browser.tabs.captureTab === "function") {
-    return browser.tabs.captureTab(tabId, options);
-  }
-
   if (typeof browser.tabs.captureVisibleTab === "function") {
     await browser.tabs.update(tabId, { active: true });
     await delay(300);
     return browser.tabs.captureVisibleTab(windowId, options);
+  }
+
+  if (typeof browser.tabs.captureTab === "function") {
+    return browser.tabs.captureTab(tabId, options);
   }
 
   throw new Error(

@@ -1,10 +1,9 @@
 {
   "description": "An extension to scrape the questions along with their respective answers on Ans to a PDF",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "Ans Scraper",
-  "version": "1.3.3",
-  "permissions": ["activeTab", "tabs"],
-  "host_permissions": ["https://ans.app/*", "<all_urls>"],
+  "version": "1.3.4",
+  "permissions": ["activeTab", "tabs", "https://ans.app/*", "<all_urls>"],
   "content_scripts": [
     {
       "matches": ["https://ans.app/*"],
@@ -28,7 +27,7 @@
       }
     }
   },
-  "action": {
+  "browser_action": {
     "default_title": "Ans Scraper",
     "default_popup": "popup/scraper.html"
   }
