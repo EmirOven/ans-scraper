@@ -223,7 +223,6 @@ async function runScrape(statusElement, downloadElement, scrapeButton) {
   const renderDelayMs = 7000;
   const activeTab = await getActiveTab();
   assertSupportedActiveTab(activeTab);
-  await ensureCapturePermission();
 
   const { error, hrefs } = await getNavLinkHrefs(activeTab.id);
 
@@ -287,6 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setStatus(statusElement, "Starting scrape...");
 
     try {
+      await ensureCapturePermission();
       const activeTab = await getActiveTab();
       assertSupportedActiveTab(activeTab);
       await runScrape(statusElement, downloadElement, scrapeButton);
