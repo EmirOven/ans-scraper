@@ -1,10 +1,6 @@
 # Ans Scraper
 
-<<<<<<< HEAD
 [<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" width="200" alt="Get extension from Firefox Addons!" />](https://addons.mozilla.org/en-US/firefox/addon/ans-scraper/)
-=======
-![alt](https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg)
->>>>>>> b080817 (Added local version of pdfobject)
 
 Sick of screenshotting every single question, rubric, and answer on your Ans results page? This browser extension does it for you with one click and every page is captured and turned into a downloadable PDF. Share it with friends, feed it to an AI, or just keep it for your own review.
 
@@ -97,8 +93,6 @@ You can still help by [reporting bugs or suggesting features](https://github.com
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
-
 ## Donate
 
 If you like our software, you can donate! Donations are the easiest method of helping us out. You can find out the links to donate on the right side of the GitHub repository (on the desktop page).
-
