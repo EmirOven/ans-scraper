@@ -3513,7 +3513,7 @@
           return "data:application/pdf;filename=" + encodeURIComponent(options.filename) + ";base64," + dataURI;
         case "pdfobjectnewwindow":
           if (Object.prototype.toString.call(globalObject) === "[object Window]") {
-            var pdfObjectUrl = "https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js";
+            var pdfObjectUrl = "./pdfobject.js";
             var useDefaultPdfObjectUrl = !options.pdfObjectUrl;
             if (!useDefaultPdfObjectUrl) {
               pdfObjectUrl = options.pdfObjectUrl;

@@ -1,14 +1,19 @@
 # Ans Scraper
 
+<<<<<<< HEAD
 [<img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" width="200" alt="Get extension from Firefox Addons!" />](https://addons.mozilla.org/en-US/firefox/addon/ans-scraper/)
+=======
+![alt](https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg)
+>>>>>>> b080817 (Added local version of pdfobject)
 
 Sick of screenshotting every single question, rubric, and answer on your Ans results page? This browser extension does it for you with one click and every page is captured and turned into a downloadable PDF. Share it with friends, feed it to an AI, or just keep it for your own review.
 
 It also restores the download button on Ans's embedded PDF viewer so you can grab the exam paper itself.
 
 ## Features
+
 - **One-click PDF export:** captures all pages of your test results into a single file
-- **Batch processing:**  opens 4 tabs at a time for faster capture
+- **Batch processing:** opens 4 tabs at a time for faster capture
 - **Smart orientation:** auto-detects portrait/landscape per page
 - **Restores PDF controls:** unhides the download and print buttons on Ans's embedded PDF viewer
 - **Cross-browser support:** — works on Firefox and Chrome/Chromium(approval phase) thanks to Manifest V3.
@@ -48,28 +53,30 @@ When you click the extension icon, a background script opens a dedicated runner 
 
 ## Permissions
 
-| Permission | Reason |
-|---|---|
-| `activeTab` | Access the current Ans tab to read navigation links |
-| `tabs` | Open, capture, and close temporary tabs during scraping |
-| `<all_urls>` | Required by Firefox to use the tab screenshot API |
+| Permission   | Reason                                                  |
+| ------------ | ------------------------------------------------------- |
+| `activeTab`  | Access the current Ans tab to read navigation links     |
+| `tabs`       | Open, capture, and close temporary tabs during scraping |
+| `<all_urls>` | Required by Firefox to use the tab screenshot API       |
 
 No data is collected or sent anywhere. Everything runs locally in your browser.
+
 ## Changelog
 
-| Version   | Changes                                                                      |
-| --------- | ---------------------------------------------------------------------------- |
-| **1.3.6** | Background-launched runner tab — same flow for Firefox and Chrome            |
-| **1.3.5** | Dedicated runner tab on Chrome so the UI stays open during capture           |
-| **1.3.4** | Fixed permission issues with the add-on store version                        |
-| **1.3.3** | Made broad website access required so Firefox capture works without prompts  |
-| **1.3.2** | Request broad capture access at runtime for Firefox                          |
-| **1.3.1** | Fixed Firefox screenshot capture permission handling, added capture fallback |
-| **1.3**   | Restore download/print buttons on the PDF viewer                             |
-| **1.2.1** | Bugfix, switched to non-minified jsPDF                                       |
-| **1.2**   | Preparing for Mozilla packaging                                              |
-| **1.1**   | Icons added                                                                  |
-| **1.0**   | Initial release                                                              |
+| Version   | Changes                                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **1.3.7** | Switched to local pdfobject since the one included in jsPDF was a CDN link which didn't play well with Google's Web Store ToS |
+| **1.3.6** | Background-launched runner tab — same flow for Firefox and Chrome                                                             |
+| **1.3.5** | Dedicated runner tab on Chrome so the UI stays open during capture                                                            |
+| **1.3.4** | Fixed permission issues with the add-on store version                                                                         |
+| **1.3.3** | Made broad website access required so Firefox capture works without prompts                                                   |
+| **1.3.2** | Request broad capture access at runtime for Firefox                                                                           |
+| **1.3.1** | Fixed Firefox screenshot capture permission handling, added capture fallback                                                  |
+| **1.3**   | Restore download/print buttons on the PDF viewer                                                                              |
+| **1.2.1** | Bugfix, switched to non-minified jsPDF                                                                                        |
+| **1.2**   | Preparing for Mozilla packaging                                                                                               |
+| **1.1**   | Icons added                                                                                                                   |
+| **1.0**   | Initial release                                                                                                               |
 
 ## Contributing
 
